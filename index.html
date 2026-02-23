@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI文字格式去除工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(118, 75, 162, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(118, 75, 162, 0.35) 0%, transparent 50%),
+                linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        header h1 {
+            font-size: 2.8em;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.2em;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 35px;
+            margin-bottom: 50px;
+        }
+
+        .input-section,
+        .output-section {
+            display: flex;
+            flex-direction: column;
+            background: #fafbfc;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+
+        .input-section:hover,
+        .output-section:hover {
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #555;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        label::before {
+            content: '';
+            width: 4px;
+            height: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1em;
+            font-family: inherit;
+            resize: vertical;
+            transition: all 0.3s ease;
+            background: white;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea[readonly] {
+            background-color: #f8f9fa;
+            border-color: #e9ecef;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex: 1;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.45);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #666;
+            border: 1px solid #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.95em;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-small:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 25px;
+            margin-top: 15px;
+            font-size: 0.95em;
+            color: #666;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .stats span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stats span::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #667eea;
+            border-radius: 50%;
+        }
+
+        .options-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 35px;
+            border: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+
+        .options-section:hover {
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .options-section h3 {
+            margin-bottom: 25px;
+            color: #555;
+            font-size: 1.3em;
+            font-weight: 600;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .options-section h3::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 18px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 14px 18px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            background: white;
+            border: 1px solid #e9ecef;
+        }
+
+        .checkbox-label:hover {
+            background-color: #f0f4ff;
+            border-color: #e0e7ff;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.1);
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-label input[type="checkbox"]:checked {
+            transform: scale(1.1);
+        }
+
+        .formatting-controls {
+            margin-top: 25px;
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .formatting-controls label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0;
+            font-weight: 500;
+            font-size: 1em;
+            color: #555;
+        }
+
+        .formatting-controls label::before {
+            display: none;
+        }
+
+        .formatting-controls select {
+            padding: 10px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .formatting-controls select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .formatting-controls select:hover {
+            border-color: #d0d0d0;
+        }
+
+        footer {
+            text-align: center;
+            color: #666;
+            font-size: 0.95em;
+            padding-top: 30px;
+            border-top: 1px solid #f0f0f0;
+            margin-top: 40px;
+        }
+
+        footer p {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        footer p:first-child {
+            font-weight: 500;
+            color: #555;
+        }
+
+        footer p:last-child {
+            font-size: 0.85em;
+            color: #888;
+            margin-top: 12px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px 28px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            opacity: 0;
+            transform: translateY(30px) scale(0.9);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            font-weight: 500;
+            font-size: 1em;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.5);
+        }
+
+        /* Logo样式 */
+        .logo-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .logo {
+            position: relative;
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50px;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .logo:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .logo::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .logo:hover::before {
+            left: 100%;
+        }
+
+        .logo-text {
+            position: relative;
+            z-index: 1;
+            font-size: 1.2em;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            letter-spacing: 2px;
+            font-family: 'Microsoft YaHei', 'SimSun', serif;
+            animation: logoGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes logoGlow {
+            from {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(255, 255, 255, 0.5);
+            }
+            to {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(118, 75, 162, 0.6);
+            }
+        }
+
+        .logo-decoration {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, #ffd700, #ffed4e);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+            animation: sparkle 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes sparkle {
+            from {
+                transform: scale(1);
+                box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+            }
+            to {
+                transform: scale(1.2);
+                box-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 30px rgba(255, 215, 0, 0.6);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+            
+            header h1 {
+                font-size: 2.2em;
+            }
+            
+            .container {
+                padding: 25px;
+                margin: 10px;
+            }
+            
+            .input-section,
+            .output-section {
+                padding: 20px;
+            }
+            
+            .options-section {
+                padding: 20px;
+            }
+            
+            .options-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                padding: 12px 24px;
+            }
+            
+            .formatting-controls {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .toast {
+                bottom: 30px;
+                right: 30px;
+                left: 30px;
+                text-align: center;
+                padding: 15px 20px;
+            }
+            
+            footer {
+                padding-top: 20px;
+                margin-top: 30px;
+            }
+            
+            .logo {
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+            
+            .logo-text {
+                font-size: 1em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+            
+            .subtitle {
+                font-size: 1em;
+            }
+            
+            .container {
+                padding: 20px;
+                border-radius: 15px;
+            }
+            
+            textarea {
+                padding: 12px;
+                font-size: 0.95em;
+            }
+            
+            .checkbox-label {
+                padding: 10px 14px;
+                font-size: 0.95em;
+            }
+            
+            .options-section h3 {
+                font-size: 1.1em;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧹 AI文字格式去除工具</h1>
+            <p class="subtitle">一键清理AI生成文本中的格式标记</p>
+        </header>
+
+        <div class="main-content">
+            <div class="input-section">
+                <label for="inputText">输入带格式的文本：</label>
+                <textarea 
+                    id="inputText" 
+                    placeholder="粘贴AI生成的文本，支持Markdown、HTML等格式..."
+                    rows="10"
+                ></textarea>
+                <div class="button-group">
+                    <button id="cleanBtn" class="btn btn-primary">清理格式</button>
+                    <button id="clearBtn" class="btn btn-secondary">清空</button>
+                </div>
+            </div>
+
+            <div class="output-section">
+                <div class="output-header">
+                    <label for="outputText">清理后的纯文本：</label>
+                    <button id="copyBtn" class="btn btn-small">复制</button>
+                </div>
+                <textarea 
+                    id="outputText" 
+                    placeholder="清理后的文本将显示在这里..."
+                    rows="10"
+                    readonly
+                ></textarea>
+                <div class="stats">
+                    <span id="charCount">字符数: 0</span>
+                    <span id="removedCount">已移除格式: 0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="options-section">
+            <h3>清理选项</h3>
+            <div class="options-grid">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="removeMarkdown" checked>
+                    <span>移除Markdown格式（**粗体**、*斜体*、代码块等）</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="removeHTML" checked>
+                    <span>移除HTML标签</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="removeLinks" checked>
+                    <span>移除链接（保留链接文本）</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="removeEmojis">
+                    <span>移除Emoji表情</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="removeExtraSpaces" checked>
+                    <span>清理多余空格（多个空格变为一个）</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="removeExtraLineBreaks">
+                    <span>清理多余换行（会改变原始排版）</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="removeSpecialChars">
+                    <span>移除特殊字符（保留中文、英文、数字）</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="convertSubscripts" checked>
+                    <span>转换下标为普通数字</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="options-section">
+            <h3>排版选项</h3>
+            <div class="options-grid">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="formatParagraphs">
+                    <span>格式化段落（统一段落间距，会改变原始排版）</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="smartFormatting" checked>
+                    <span>智能识别标题并单独成行</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="removeEmptyLines">
+                    <span>移除空行（会改变原始排版）</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="trimLines">
+                    <span>去除每行首尾空格（会改变原始排版）</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="unifyLineBreaks" checked>
+                    <span>统一换行符（Windows/Mac/Linux）</span>
+                </label>
+            </div>
+            <div class="formatting-controls">
+                <label>
+                    <span>段落间距：</span>
+                    <select id="paragraphSpacing">
+                        <option value="single">单倍行距</option>
+                        <option value="double" selected>双倍行距</option>
+                        <option value="triple">三倍行距</option>
+                    </select>
+                </label>
+                <label>
+                    <span>每段首行缩进：</span>
+                    <select id="indentFirstLine">
+                        <option value="none">无缩进</option>
+                        <option value="2spaces">2个空格</option>
+                        <option value="4spaces" selected>4个空格</option>
+                        <option value="tab">1个Tab</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+
+        <footer>
+            <p>💡 提示：支持批量处理，粘贴后点击"清理格式"即可</p>
+            <p style="margin-top: 10px; font-size: 0.85em; color: #888;">
+                智能识别标题功能已开启：自动识别（1）、（2）等格式的标题，并将其单独成行 | 默认清理多余空格，保持原始换行
+            </p>
+            <div style="margin-top: 15px; display: flex; justify-content: center; align-items: center;">
+                <div class="logo-container">
+                    <div class="logo">
+                        <span class="logo-text">刘拾七</span>
+                        <div class="logo-decoration"></div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    
+    <script>
+        // 等待DOM加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const inputText = document.getElementById('inputText');
+            const outputText = document.getElementById('outputText');
+            const cleanBtn = document.getElementById('cleanBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const charCount = document.getElementById('charCount');
+            const removedCount = document.getElementById('removedCount');
+            const toast = document.getElementById('toast');
+
+            // 清理文本函数
+            function cleanText(text) {
+                if (!text) return { cleaned: '', removedChars: 0 };
+                
+                let cleaned = text;
+                const originalLength = cleaned.length;
+                
+                // 移除Markdown格式
+                if (document.getElementById('removeMarkdown').checked) {
+                    // 移除代码块（多行）
+                    cleaned = cleaned.replace(/```[\s\S]*?```/g, '');
+                    // 移除行内代码
+                    cleaned = cleaned.replace(/`[^`]*`/g, '');
+                    
+                    // 移除粗体和斜体（先处理粗斜体，再处理单独的）
+                    cleaned = cleaned.replace(/\*\*\*(.*?)\*\*\*/g, '$1');
+                    cleaned = cleaned.replace(/\*\*(.*?)\*\*/g, '$1');
+                    cleaned = cleaned.replace(/\*(.*?)\*/g, '$1');
+                    cleaned = cleaned.replace(/___(.*?)___/g, '$1');
+                    cleaned = cleaned.replace(/__(.*?)__/g, '$1');
+                    cleaned = cleaned.replace(/_(.*?)_/g, '$1');
+                    
+                    // 移除标题标记
+                    cleaned = cleaned.replace(/^#{1,6}\s+(.*)$/gm, '$1');
+                    
+                    // 移除列表标记
+                    cleaned = cleaned.replace(/^[\s]*[-*+]\s+/gm, '');
+                    cleaned = cleaned.replace(/^[\s]*\d+\.\s+/gm, '');
+                    
+                    // 移除引用标记
+                    cleaned = cleaned.replace(/^>\s+/gm, '');
+                    
+                    // 移除水平线
+                    cleaned = cleaned.replace(/^[-*_]{3,}$/gm, '');
+                    
+                    // 移除链接但保留文本 [text](url) -> text
+                    cleaned = cleaned.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+                    
+                    // 移除图片标记 ![alt](url)
+                    cleaned = cleaned.replace(/!\[([^\]]*)\]\([^\)]+\)/g, '');
+                }
+                
+                // 移除HTML标签
+                if (document.getElementById('removeHTML').checked) {
+                    cleaned = cleaned.replace(/<[^>]+>/g, '');
+                    // 解码HTML实体
+                    const textarea = document.createElement('textarea');
+                    textarea.innerHTML = cleaned;
+                    cleaned = textarea.value;
+                }
+                
+                // 移除链接（如果未移除Markdown）
+                if (document.getElementById('removeLinks').checked && !document.getElementById('removeMarkdown').checked) {
+                    cleaned = cleaned.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+                    cleaned = cleaned.replace(/https?:\/\/[^\s]+/g, '');
+                }
+                
+                // 移除Emoji
+                if (document.getElementById('removeEmojis').checked) {
+                    cleaned = cleaned.replace(/[\u{1F600}-\u{1F64F}]/gu, '');
+                    cleaned = cleaned.replace(/[\u{1F300}-\u{1F5FF}]/gu, '');
+                    cleaned = cleaned.replace(/[\u{1F680}-\u{1F6FF}]/gu, '');
+                    cleaned = cleaned.replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '');
+                    cleaned = cleaned.replace(/[\u{2600}-\u{26FF}]/gu, '');
+                    cleaned = cleaned.replace(/[\u{2700}-\u{27BF}]/gu, '');
+                }
+                
+                // 清理多余空格（不影响换行）
+                if (document.getElementById('removeExtraSpaces').checked) {
+                    // 只清理空格和制表符，不改变换行
+                    cleaned = cleaned.replace(/[ \t]+/g, ' '); // 多个空格或制表符变为一个空格
+                    // 清理每行首尾的空格和制表符（但不影响换行符）
+                    cleaned = cleaned.replace(/^[ \t]+|[ \t]+$/gm, '');
+                }
+                
+                // 清理多余换行（独立控制）
+                if (document.getElementById('removeExtraLineBreaks').checked) {
+                    cleaned = cleaned.replace(/\n{3,}/g, '\n\n'); // 多个换行变为两个
+                }
+                
+                // 移除特殊字符（只保留中文、英文、数字、基本标点）
+                if (document.getElementById('removeSpecialChars').checked) {
+                    cleaned = cleaned.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s，。！？、；：""''（）【】《》.,!?;:()\[\]<>]/g, '');
+                }
+                
+                // 转换下标为普通数字（₀-₉ → 0-9，也包括上标）
+                if (document.getElementById('convertSubscripts').checked) {
+                    // Unicode下标字符映射：₀₁₂₃₄₅₆₇₈₉
+                    const subscriptMap = {
+                        '\u2080': '0', '\u2081': '1', '\u2082': '2', '\u2083': '3', '\u2084': '4',
+                        '\u2085': '5', '\u2086': '6', '\u2087': '7', '\u2088': '8', '\u2089': '9',
+                        // Unicode上标字符映射：⁰¹²³⁴⁵⁶⁷⁸⁹
+                        '\u2070': '0', '\u00B9': '1', '\u00B2': '2', '\u00B3': '3', '\u2074': '4',
+                        '\u2075': '5', '\u2076': '6', '\u2077': '7', '\u2078': '8', '\u2079': '9'
+                    };
+                    cleaned = cleaned.replace(/[\u2080-\u2089\u2070\u00B9\u00B2\u00B3\u2074-\u2079]/g, function(match) {
+                        return subscriptMap[match] || match;
+                    });
+                }
+                
+                // 排版格式化
+                if (document.getElementById('formatParagraphs').checked || 
+                    document.getElementById('removeEmptyLines').checked ||
+                    document.getElementById('trimLines').checked ||
+                    document.getElementById('unifyLineBreaks').checked) {
+                    
+                    // 统一换行符（Windows/Mac/Linux）
+                    if (document.getElementById('unifyLineBreaks').checked) {
+                        cleaned = cleaned.replace(/\r\n/g, '\n'); // Windows
+                        cleaned = cleaned.replace(/\r/g, '\n');   // Mac
+                    }
+                    
+                    // 分割成行（保持原始换行）
+                    let lines = cleaned.split('\n');
+                    
+                    // 智能识别标题并单独成行
+                    const smartFormatting = document.getElementById('smartFormatting').checked;
+                    if (smartFormatting) {
+                        let processedLines = [];
+                        for (let line of lines) {
+                            const trimmedLine = line.trim();
+                            
+                            // 检查是否以（1）或(1)开头，且整行较长（标题和段落连在一起）
+                            const titleMatch = trimmedLine.match(/^([（(])(\d+)([）)])\s*(.+)$/);
+                            if (titleMatch && trimmedLine.length > 60) {
+                                const leftBracket = titleMatch[1];  // （ 或 (
+                                const number = titleMatch[2];
+                                const rightBracket = titleMatch[3];  // ） 或 )
+                                const afterNumber = titleMatch[4]; // （1）后面的内容
+                                
+                                // 查找段落开始的标志词（通常是动词开头）
+                                const paragraphStarters = [
+                                    '首次', '创新', '提出', '利用', '通过', '明确', '系统', 
+                                    '将', '在', '该', '这种', '创新性地', '明确提出', 
+                                    '利用目标', '通过压电', '该设计', '该机制', '该创新'
+                                ];
+                                
+                                let foundSplit = false;
+                                for (let starter of paragraphStarters) {
+                                    const index = afterNumber.indexOf(starter);
+                                    if (index > 0 && index <= 50) {
+                                        // 找到分割点
+                                        const titlePart = afterNumber.substring(0, index).trim();
+                                        const paragraphPart = afterNumber.substring(index).trim();
+                                        
+                                        // 确保标题部分合理（不包含句号，长度合理）
+                                        if (!/[。.]/.test(titlePart) && titlePart.length >= 5 && titlePart.length <= 50) {
+                                            processedLines.push(leftBracket + number + rightBracket + ' ' + titlePart);
+                                            processedLines.push(''); // 标题后添加空行
+                                            processedLines.push(paragraphPart);
+                                            foundSplit = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                if (!foundSplit) {
+                                    // 如果没找到标志词，尝试按句号分割
+                                    const periodIndex = afterNumber.indexOf('。');
+                                    if (periodIndex > 0 && periodIndex <= 60) {
+                                        const titlePart = afterNumber.substring(0, periodIndex + 1).trim();
+                                        const paragraphPart = afterNumber.substring(periodIndex + 1).trim();
+                                        if (paragraphPart.length > 0) {
+                                            processedLines.push(leftBracket + number + rightBracket + ' ' + titlePart);
+                                            processedLines.push(''); // 标题后添加空行
+                                            processedLines.push(paragraphPart);
+                                            foundSplit = true;
+                                        }
+                                    }
+                                }
+                                
+                                if (!foundSplit) {
+                                    // 如果还是没找到，保持原样
+                                    processedLines.push(line);
+                                }
+                            } else {
+                                // 如果没有匹配或行较短，保持原样
+                                processedLines.push(line);
+                            }
+                        }
+                        lines = processedLines;
+                    }
+                    
+                    // 去除每行首尾空格（可选，默认关闭以保持原始排版）
+                    if (document.getElementById('trimLines').checked) {
+                        lines = lines.map(line => line.trim());
+                    }
+                    
+                    // 移除空行
+                    if (document.getElementById('removeEmptyLines').checked) {
+                        lines = lines.filter(line => line.length > 0);
+                    }
+                    
+                    // 格式化段落
+                    if (document.getElementById('formatParagraphs').checked) {
+                        const spacing = document.getElementById('paragraphSpacing').value;
+                        const indent = document.getElementById('indentFirstLine').value;
+                        const removeEmpty = document.getElementById('removeEmptyLines').checked;
+                        const smartFormatting = document.getElementById('smartFormatting').checked;
+                        
+                        // 识别行类型：title（标题）、list（列表项）、paragraph（段落）
+                        function getLineType(line) {
+                            if (!line || line.length === 0) return 'empty';
+                            
+                            // 如果未启用智能排版，所有非空行都视为段落
+                            if (!smartFormatting) {
+                                return 'paragraph';
+                            }
+                            
+                            // 列表项：以 -、*、+ 开头，或数字.开头（但数字后面必须有内容）
+                            const trimmedLine = line.trim();
+                            if (/^[-*+]\s+/.test(trimmedLine) || /^\d+[\.、]\s+/.test(trimmedLine)) {
+                                return 'list';
+                            }
+                            
+                            // 标题识别规则（按优先级）
+                            
+                            // 1. 以括号数字开头（（1）、（2）、(1)、(2) 等）
+                            if (/^[（(]\d+[）)]\s*/.test(trimmedLine)) {
+                                const afterNumber = trimmedLine.replace(/^[（(]\d+[）)]\s*/, '');
+                                // 如果整行较短（少于80字符），优先识别为标题
+                                if (trimmedLine.length <= 80) {
+                                    // 如果标题部分较短（少于60字符），肯定是标题
+                                    if (afterNumber.length <= 60) {
+                                        return 'title';
+                                    }
+                                    // 如果标题部分较长但以句号结尾，也可能是标题
+                                    if (/[。.]$/.test(afterNumber)) {
+                                        return 'title';
+                                    }
+                                }
+                                // 如果标题部分较短（少于50字符）且不包含句号，识别为标题
+                                if (afterNumber.length <= 50 && !/[。.]/.test(afterNumber)) {
+                                    return 'title';
+                                }
+                            }
+                            
+                            // 2. 以中文数字或序号开头（一、二、三、第一、第二等）
+                            if (/^[一二三四五六七八九十]+[、\.]\s*/.test(trimmedLine) || 
+                                /^第[一二三四五六七八九十\d]+[章节部分条项]\s*/.test(trimmedLine)) {
+                                return 'title';
+                            }
+                            
+                            // 3. 以数字开头且较短（可能是标题编号）
+                            if (trimmedLine.length <= 60 && /^\d+[\.、]?\s+/.test(trimmedLine)) {
+                                // 检查下一行是否是段落（较长），如果是则当前行是标题
+                                return 'title';
+                            }
+                            
+                            // 3. 以冒号结尾的短行（通常是标题）
+                            if (trimmedLine.length <= 40 && /[:：]$/.test(trimmedLine)) {
+                                return 'title';
+                            }
+                            
+                            // 4. 非常短的行（少于25字符）且不包含句号，可能是标题
+                            if (trimmedLine.length <= 25 && !/[。.]/.test(trimmedLine) && trimmedLine.length > 0) {
+                                // 排除明显的列表项和段落
+                                if (!/^[-*+]\s/.test(trimmedLine) && 
+                                    !/^\d+[\.、]\s/.test(trimmedLine) &&
+                                    !/[，,；;]/.test(trimmedLine)) { // 不包含逗号、分号等，更可能是标题
+                                    return 'title';
+                                }
+                            }
+                            
+                            // 5. 全大写的短行（可能是英文标题）
+                            if (trimmedLine.length <= 50 && trimmedLine === trimmedLine.toUpperCase() && 
+                                /^[A-Z\s]+$/.test(trimmedLine)) {
+                                return 'title';
+                            }
+                            
+                            return 'paragraph';
+                        }
+                        
+                        let formattedLines = [];
+                        let lastType = null;
+                        
+                        for (let i = 0; i < lines.length; i++) {
+                            const line = lines[i];
+                            const lineType = getLineType(line);
+                            
+                            // 处理空行
+                            if (lineType === 'empty') {
+                                if (!removeEmpty && formattedLines.length > 0) {
+                                    // 根据间距设置添加空行
+                                    if (spacing === 'double') {
+                                        formattedLines.push('');
+                                    } else if (spacing === 'triple') {
+                                        formattedLines.push('');
+                                        formattedLines.push('');
+                                    }
+                                }
+                                lastType = null;
+                                continue;
+                            }
+                            
+                            // 添加类型之间的间距
+                            if (lastType !== null && lastType !== lineType && lastType !== 'empty') {
+                                // 标题后面如果是段落，必须添加空行
+                                if (lastType === 'title' && lineType === 'paragraph') {
+                                    if (!removeEmpty) {
+                                        formattedLines.push(''); // 标题后总是有空行
+                                    }
+                                }
+                                
+                                // 标题后面如果是另一个标题，需要空行
+                                if (lastType === 'title' && lineType === 'title') {
+                                    if (!removeEmpty && (spacing === 'double' || spacing === 'triple')) {
+                                        formattedLines.push('');
+                                    }
+                                }
+                                
+                                // 列表项后面如果是段落或标题，需要空行
+                                if (lastType === 'list' && (lineType === 'paragraph' || lineType === 'title')) {
+                                    if (!removeEmpty) {
+                                        if (spacing === 'double' || spacing === 'triple') {
+                                            formattedLines.push('');
+                                        }
+                                    }
+                                }
+                                
+                                // 段落后面如果是标题或列表，需要空行（标题和列表应该在段落上方）
+                                if (lastType === 'paragraph' && (lineType === 'title' || lineType === 'list')) {
+                                    if (!removeEmpty) {
+                                        if (spacing === 'double' || spacing === 'triple') {
+                                            formattedLines.push('');
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            let formattedLine = line;
+                            
+                            // 标题和列表项：去除首尾空格，不添加缩进
+                            if (lineType === 'title' || lineType === 'list') {
+                                formattedLine = line.trim();
+                            }
+                            // 段落：根据情况添加缩进
+                            else if (lineType === 'paragraph') {
+                                // 先去除首尾空格
+                                formattedLine = line.trim();
+                                
+                                // 如果前面是标题、列表或空行，段落应该缩进
+                                if (indent !== 'none') {
+                                    const shouldIndent = lastType === null || 
+                                                        lastType === 'empty' || 
+                                                        lastType === 'title' || 
+                                                        lastType === 'list';
+                                    
+                                    if (shouldIndent) {
+                                        if (indent === '2spaces') {
+                                            formattedLine = '  ' + formattedLine;
+                                        } else if (indent === '4spaces') {
+                                            formattedLine = '    ' + formattedLine;
+                                        } else if (indent === 'tab') {
+                                            formattedLine = '\t' + formattedLine;
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            formattedLines.push(formattedLine);
+                            lastType = lineType;
+                        }
+                        
+                        lines = formattedLines;
+                    }
+                    
+                    // 重新组合
+                    cleaned = lines.join('\n');
+                }
+                
+                // 最终清理：保持原始排版，不自动修改
+                // 如果用户需要清理多余空行，可以通过"移除空行"选项实现
+                // 如果用户需要去除首尾空白，可以通过"去除每行首尾空格"选项实现
+                // cleaned = cleaned.trim(); // 注释掉，保持原始首尾空白
+                
+                const removedChars = originalLength - cleaned.length;
+                return { cleaned, removedChars };
+            }
+
+            // 更新统计信息
+            function updateStats(text, removed) {
+                if (charCount) charCount.textContent = `字符数: ${text.length}`;
+                if (removedCount) removedCount.textContent = `已移除格式: ${removed} 个字符`;
+            }
+
+            // 显示提示消息
+            function showToast(message) {
+                if (!toast) return;
+                toast.textContent = message;
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 2000);
+            }
+
+            // 清理按钮事件
+            if (cleanBtn) {
+                cleanBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('清理按钮被点击');
+                    const input = inputText ? inputText.value : '';
+                    console.log('输入文本长度:', input.length);
+                    if (!input.trim()) {
+                        showToast('请输入要清理的文本');
+                        return;
+                    }
+                    
+                    try {
+                        console.log('开始清理文本...');
+                        const { cleaned, removedChars } = cleanText(input);
+                        console.log('清理完成，结果长度:', cleaned.length);
+                        if (outputText) {
+                            outputText.value = cleaned;
+                            console.log('输出文本已更新');
+                        }
+                        updateStats(cleaned, removedChars);
+                        showToast('格式清理完成！');
+                    } catch (error) {
+                        console.error('清理错误:', error);
+                        alert('清理失败: ' + error.message);
+                        showToast('清理失败，请检查输入');
+                    }
+                });
+            } else {
+                console.error('清理按钮未找到！');
+            }
+
+            // 清空按钮事件
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('清空按钮被点击');
+                    if (inputText) inputText.value = '';
+                    if (outputText) outputText.value = '';
+                    updateStats('', 0);
+                    showToast('已清空');
+                });
+            } else {
+                console.error('清空按钮未找到！');
+            }
+
+            // 复制按钮事件
+            if (copyBtn) {
+                copyBtn.addEventListener('click', function() {
+                    const text = outputText ? outputText.value : '';
+                    if (!text.trim()) {
+                        showToast('没有可复制的内容');
+                        return;
+                    }
+                    
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text).then(() => {
+                            showToast('已复制到剪贴板！');
+                        }).catch(() => {
+                            // 降级方案
+                            outputText.select();
+                            document.execCommand('copy');
+                            showToast('已复制到剪贴板！');
+                        });
+                    } else {
+                        // 降级方案
+                        outputText.select();
+                        document.execCommand('copy');
+                        showToast('已复制到剪贴板！');
+                    }
+                });
+            }
+
+            // 实时更新统计（输入时）
+            if (inputText) {
+                inputText.addEventListener('input', function() {
+                    const text = inputText.value;
+                    if (charCount) charCount.textContent = `字符数: ${text.length}`;
+                });
+            }
+
+            // 回车快捷键清理（Ctrl+Enter）
+            if (inputText) {
+                inputText.addEventListener('keydown', function(e) {
+                    if (e.ctrlKey && e.key === 'Enter') {
+                        if (cleanBtn) cleanBtn.click();
+                    }
+                });
+            }
+
+            // 初始化
+            updateStats('', 0);
+            
+            // 调试信息
+            console.log('AI文字格式去除工具已加载');
+            console.log('元素检查:', {
+                inputText: !!inputText,
+                outputText: !!outputText,
+                cleanBtn: !!cleanBtn,
+                clearBtn: !!clearBtn,
+                copyBtn: !!copyBtn
+            });
+            
+            // 测试按钮点击
+            if (cleanBtn) {
+                console.log('清理按钮已绑定事件');
+            } else {
+                alert('错误：清理按钮未找到！请刷新页面重试。');
+            }
+        });
+    </script>
+</body>
+</html>
